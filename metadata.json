@@ -1,0 +1,6 @@
+{
+  "name": "Limitless Lens",
+  "description": "A multi-page image capturer for Limitless TCG Pocket, fetching and displaying all card images from complex search queries.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
