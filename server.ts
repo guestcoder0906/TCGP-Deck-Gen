@@ -26,11 +26,15 @@ async function fetchCardInfo(id: string) {
     const $ = cheerio.load(html);
     const title = $('title').text().replace(' – Limitless TCG Pocket Database', '');
     const text = $('.card-text-section').text().replace(/\s+/g, ' ').trim();
-    const data = { title, text };
+    let image_url = $('.card-image img').attr('src') || $('.card img').attr('src') || $('meta[property="og:image"]').attr('content') || $('img').eq(0).attr('src') || '';
+    if (image_url && image_url.startsWith("/")) {
+      image_url = `https://pocket.limitlesstcg.com${image_url}`;
+    }
+    const data = { title, text, image_url };
     cardCache.set(id, data);
     return data;
   } catch (e) {
-    return { title: id, text: 'Failed to load card' };
+    return { title: id, text: 'Failed to load card', image_url: '' };
   }
 }
 
@@ -145,7 +149,9 @@ CRITICAL:
 6. TIMEOUT PREVENTION: You only have a limited number of turns. To avoid timing out, you MUST execute multiple tool calls in PARALLEL in a single turn. For example, call view_card on multiple cards at once, and combine notebook_write calls with search_cards or view_card calls in the same turn. DO NOT waste turns doing only a single notebook_write.
 7. NO ENERGY CARDS IN DECK: Do NOT include Energy cards in your decklist! Energy cards do not exist as deck cards in Pokémon TCG Pocket. Instead, Energy is generated automatically in the Energy Zone each turn based on the types you select for your deck. The 20 cards in the deck MUST only be Pokémon and Trainer cards.
 8. USE EXACT IMAGE URLS: You MUST use the exact \`image_url\` returned by the 'view_card' tool for every single card in your final Markdown response. Do NOT hallucinate image URLs or guess them.
-9. META DECKS REFERENCE: You MUST use the 'search_meta_decks' and 'search_best_cards' tools as your VERY FIRST actions (with an empty search string) to look at the top 50 meta decks in full detail (with each card's full text and abilities included). This will give you the baseline knowledge of what cards are good (like Ice Pops vs Potion) and how top tier decks are constructed. Always search ALL variations (e.g. "snorlax ex" vs "snorlax"). Take notes of all good techniques, strategies, and patterns used in these meta decks in your notebook while making a new deck.
+9. META DECKS REFERENCE: You MUST use the 'search_meta_decks' and 'search_best_cards' tools as your VERY FIRST actions (with an empty search string) to look at the top 50 meta decks in full detail (with each card's full text and abilities included). This will give you the baseline knowledge of what cards are good (like Ice Pops vs Potion) and how top tier decks are constructed. You MUST prioritize mimicking these meta deck patterns over making up your own strategies. Always search ALL variations (e.g. "snorlax ex" vs "snorlax"). Take notes of all good techniques, strategies, and patterns used in these meta decks in your notebook while making a new deck.
+10. ENERGY ZONE DECLARATION: You MUST explicitly declare 1-3 Energy Types for the Energy Zone generation in your final output. Ensure the deck is energy-efficient and correct. Anticipate energy requirements carefully: for example, do NOT run 2 different types of energies if the main Pokémon require a lot of energy and you have no energy acceleration. Usually, running one energy type (plus Colorless) makes sense unless you have a specific combo or acceleration that supports multiple types.
+11. EVOLUTION LINES: Do NOT forget evolutions of cards! If a basic Pokémon can evolve to become stronger (e.g., Charmeleon into Charizard), you MUST include the evolution line. Only include just the basic form if the deck explicitly relies ONLY on that basic (e.g., Snorlax stall) and it is powerful enough on its own. Including a basic Pokémon without its evolution when it is clearly meant to be evolved does not make sense and is strictly forbidden.
 `,
           tools: [{
             functionDeclarations: [
@@ -294,7 +300,8 @@ CRITICAL:
                       count: parseInt(count, 10),
                       id,
                       title: info.title,
-                      text: info.text
+                      text: info.text,
+                      image_url: info.image_url
                     };
                   })
                 };
